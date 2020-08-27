@@ -5,6 +5,11 @@ Seed your [DoD VDP](https://hackerone.com/deptofdefense) recon with the latest l
 Based on the work on [dotmil-domains](https://github.com/esonderegger/dotmil-domains/) project by [esonderegger](https://twitter.com/esonderegger), a research project to map out the DoD's public-facing domain listings:
 > There currently isn't a publicly available directory of all the domain names registered under the US military's .mil top-level domain. Such a directory would be useful for people looking to get an aggregate view of military websites and how they are hosted.
 
+## Install
+```
+go get -u github.com/daehee/mildew
+```
+
 ## Usage
 ```
 mildew [--roots]

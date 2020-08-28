@@ -8,7 +8,9 @@ import (
     "github.com/gocolly/colly"
 )
 
-func getDod(c *colly.Collector, out chan<- string) error {
+func dirDod(out chan<- string) error {
+    c := colly.NewCollector()
+
     c.OnHTML("div.DGOVLinkBox > div", func(e *colly.HTMLElement) {
         link := e.ChildAttr("a[href]", "href")
         out <- link
@@ -19,7 +21,9 @@ func getDod(c *colly.Collector, out chan<- string) error {
     return err
 }
 
-func getAf(c *colly.Collector, out chan<- string) error {
+func dirAf(out chan<- string) error {
+    c := colly.NewCollector()
+
     c.OnHTML("a.AFSiteLink, a.AFSiteBaseLink", func(e *colly.HTMLElement) {
         link := e.Attr("href")
         out <- link
@@ -35,7 +39,9 @@ func getAf(c *colly.Collector, out chan<- string) error {
     return err
 }
 
-func getArmy(c *colly.Collector, out chan<- string) error {
+func dirArmy(out chan<- string) error {
+    c := colly.NewCollector()
+
     c.OnHTML("div.links-list a", func(e *colly.HTMLElement) {
         link := e.Attr("href")
         out <- link
@@ -47,7 +53,9 @@ func getArmy(c *colly.Collector, out chan<- string) error {
 }
 
 // Scrapes website URLs from Navy's VueJS SPA, which requires some messy JSON parsing
-func getNavy(c *colly.Collector, out chan<- string) error {
+func dirNavy(out chan<- string) error {
+    c := colly.NewCollector()
+
     c.OnHTML("#dnn_ctr752_ModuleContent > script:nth-of-type(2)", func(e *colly.HTMLElement) {
         // find JSON string feeding VueJS website directory
         jsonData := e.Text[strings.Index(e.Text, "[{") : strings.Index(e.Text, "}]}]")+4]

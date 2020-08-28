@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"net/url"
-
-	"github.com/gocolly/colly"
 )
 
 func check(e error) {
@@ -43,60 +41,80 @@ func extractRoot(d string) string {
 	return root
 }
 
-type getFn func(*colly.Collector, chan<- string) error
+type dirFn func(chan<- string) error
+
+func scrapeDirs(dirs []dirFn) <- chan string {
+	res := make(chan string)
+	var wg sync.WaitGroup
+
+	for _, dir := range dirs {
+		wg.Add(1)
+		fn := dir
+		go func() {
+			defer wg.Done()
+			err := fn(res)
+			check(err)
+		}()
+	}
+
+	// The dir functions have returned, so all calls to wg.Add are done. Start a
+	// goroutine to close res once all the sends are done
+	go func() {
+		wg.Wait()
+		close(res)
+	}()
+
+	return res
+}
 
 func main() {
 	var rootsOnly bool
 	flag.BoolVar(&rootsOnly, "roots", false, "Only show canonical root domains")
 	flag.Parse()
 
-	sources := []getFn{
-		getDod,
-		getAf,
-		getArmy,
-		getNavy,
+	dirs := []dirFn{
+		dirDod,
+		dirAf,
+		dirArmy,
+		dirNavy,
 	}
 
-	out := make(chan string)
-	var wg sync.WaitGroup
-	c := colly.NewCollector()
+	urls := scrapeDirs(dirs)
 
-	for _, source := range sources {
-		wg.Add(1)
-		fn := source
-		go func() {
-			defer wg.Done()
-			err := fn(c, out)
-			check(err)
-		}()
-	}
+	seenDomain := make(map[string]bool)
+	seenRoot:= make(map[string]bool)
 
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	seen := make(map[string]bool)
-	for d := range out {
-	    d = getSub(d)
-
-	    // extract roots only if flag is set by user
-		if rootsOnly {
-			d = extractRoot(d)
-		}
+	// process and output results from directory scraper workers
+	for u := range urls {
+		// parse result
+	    sub := getSub(u)
 
 		// de-duplicate results
-		if _, ok := seen[d]; ok {
+		if _, dd := seenDomain[sub]; dd {
 			continue
 		}
-		seen[d] = true
+		seenDomain[sub] = true
 
 		// discard non-dotmil domains
-		if !isDotmil(d) {
+		if !isDotmil(sub) {
 			continue
 		}
 
-		fmt.Println(d)
-	}
+		root := extractRoot(sub)
 
+		// check if duplicate root
+		_, dr := seenRoot[root]
+
+		// output root only if unique and roots flag is set
+		// otherwise, output full domain
+		if rootsOnly {
+		    if !dr {
+				fmt.Println(root)
+			}
+		} else {
+			fmt.Println(sub)
+		}
+
+		seenRoot[root] = true
+	}
 }

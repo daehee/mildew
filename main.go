@@ -3,10 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"strings"
-	"sync"
-
 	"net/url"
+	"strings"
 )
 
 func check(e error) {
@@ -41,32 +39,6 @@ func extractRoot(d string) string {
 	return root
 }
 
-type dirFn func(chan<- string) error
-
-func scrapeDirs(dirs []dirFn) <- chan string {
-	res := make(chan string)
-	var wg sync.WaitGroup
-
-	for _, dir := range dirs {
-		wg.Add(1)
-		fn := dir
-		go func() {
-			defer wg.Done()
-			err := fn(res)
-			check(err)
-		}()
-	}
-
-	// The dir functions have returned, so all calls to wg.Add are done. Start a
-	// goroutine to close res once all the sends are done
-	go func() {
-		wg.Wait()
-		close(res)
-	}()
-
-	return res
-}
-
 func main() {
 	var rootsOnly bool
 	flag.BoolVar(&rootsOnly, "roots", false, "Only show canonical root domains")
@@ -79,7 +51,11 @@ func main() {
 		dirNavy,
 	}
 
-	urls := scrapeDirs(dirs)
+	var err error
+	urls := make(chan string)
+
+	err = scrapeDirs(dirs, urls)
+	check(err)
 
 	seenDomain := make(map[string]bool)
 	seenRoot:= make(map[string]bool)

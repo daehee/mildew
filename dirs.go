@@ -4,9 +4,36 @@ import (
     "encoding/json"
     "log"
     "strings"
+    "sync"
 
     "github.com/gocolly/colly"
 )
+
+type dirFn func(chan<- string) error
+
+func scrapeDirs(dirs []dirFn, res chan<- string) error  {
+    // res := make(chan string)
+    var wg sync.WaitGroup
+
+    for _, dir := range dirs {
+        wg.Add(1)
+        fn := dir
+        go func() {
+            defer wg.Done()
+            err := fn(res)
+            check(err)
+        }()
+    }
+
+    // The dir functions have returned, so all calls to wg.Add are done. Start a
+    // goroutine to close res once all the sends are done
+    go func() {
+        wg.Wait()
+        close(res)
+    }()
+
+    return nil
+}
 
 func dirDod(out chan<- string) error {
     c := colly.NewCollector()

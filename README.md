@@ -12,7 +12,7 @@ go get -u github.com/daehee/mildew
 
 ## Usage
 ```
-mildew | sort | tee mildew_$(date "+%Y%m%d-%H%M%S").txt
+mildew
 ```
 
 ## Data Sources

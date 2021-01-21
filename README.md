@@ -7,7 +7,7 @@ Based on the work of [dotmil-domains](https://github.com/esonderegger/dotmil-dom
 
 ## Install
 ```
-go get -u github.com/daehee/mildew
+go get -u github.com/daehee/mildew/cmd/mildew
 ```
 
 ## Usage
